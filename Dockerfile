@@ -1,0 +1,1 @@
+FROM cockroachdb/cockroach:v1.0.2
