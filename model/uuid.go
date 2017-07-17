@@ -23,3 +23,19 @@ func NewUUID() (*UUID, error) {
 func (u *UUID) String() string {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:])
 }
+
+// MarshalJSON overrides the JSON representation of the object
+func (u *UUID) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", u.String())), nil
+}
+
+// UnmarshalJSON overrides the JSON representation of the object
+func (u *UUID) UnmarshalJSON(byt []byte) error {
+	str := string(byt)
+	uuid, err := uuid.ParseHex(str)
+	if err != nil {
+		return err
+	}
+	*u = [16]byte(*uuid)
+	return nil
+}
