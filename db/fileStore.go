@@ -43,68 +43,77 @@ func (p *PlaybackFileStore) Open() error {
 	return nil
 }
 
-// Clips ...
+// Clips retrieves all active clip objects from the store.
 func (p *PlaybackFileStore) Clips() []model.MediaClip {
 	return p.ClipsArr
 }
 
-// NewClip ...
+// NewClip creates and returns a new clip object. The new object is immediately saved to the store.
 func (p *PlaybackFileStore) NewClip() (*model.MediaClip, error) {
 	clip, err := model.NewMediaClip()
 	if err != nil {
 		return nil, err
 	}
 	p.ClipsArr = append(p.ClipsArr, *clip)
-	p.saveClips()
-	return clip, nil
+	return clip, p.saveObjects()
 }
 
-// UpdateClip ...
+// UpdateClip updates the state of a clip.
 func (p *PlaybackFileStore) UpdateClip(clip model.MediaClip) error {
 	clipIdx, err := p.clipIndex(clip)
 	if err != nil {
 		return err
 	}
 	p.ClipsArr[clipIdx] = clip
-	p.saveClips()
-	return nil
+	return p.saveObjects()
 }
 
-// DeleteClip ...
+// DeleteClip removes a clip from the file store.
 func (p *PlaybackFileStore) DeleteClip(clip model.MediaClip) error {
 	clipIdx, err := p.clipIndex(clip)
 	if err != nil {
 		return err
 	}
 	p.ClipsArr = append(p.ClipsArr[:clipIdx], p.ClipsArr[clipIdx+1:]...)
-	p.saveClips()
-	return nil
+	return p.saveObjects()
 }
 
-// PlaybackStates  ...
+// PlaybackStates retrieves all active playback states.
 func (p *PlaybackFileStore) PlaybackStates() []model.PlaybackState {
 	return p.PlaybackStatesArr
 }
 
-// NewPlaybackState ...
+// NewPlaybackState creates a new playback state object that's immediately saved to the store.
 func (p *PlaybackFileStore) NewPlaybackState() (*model.PlaybackState, error) {
-	p.saveClips()
-	return &model.PlaybackState{}, nil
+	playback, err := model.NewPlaybackState()
+	if err != nil {
+		return nil, err
+	}
+	p.PlaybackStatesArr = append(p.PlaybackStatesArr, *playback)
+	return playback, p.saveObjects()
 }
 
-// UpdatePlaybackState ...
+// UpdatePlaybackState updates the state of an existing playback state object.
 func (p *PlaybackFileStore) UpdatePlaybackState(state model.PlaybackState) error {
-	p.saveClips()
-	return nil
+	index, err := p.playbackStateIndex(state)
+	if err != nil {
+		return err
+	}
+	p.PlaybackStatesArr[index] = state
+	return p.saveObjects()
 }
 
-// DeletePlaybackClip ...
-func (p *PlaybackFileStore) DeletePlaybackClip(state model.PlaybackState) error {
-	p.saveClips()
-	return nil
+// DeletePlaybackState deletes an active playback state object from the store.
+func (p *PlaybackFileStore) DeletePlaybackState(state model.PlaybackState) error {
+	index, err := p.playbackStateIndex(state)
+	if err != nil {
+		return err
+	}
+	p.PlaybackStatesArr = append(p.PlaybackStatesArr[:index], p.PlaybackStatesArr[index+1:]...)
+	return p.saveObjects()
 }
 
-func (p *PlaybackFileStore) saveClips() error {
+func (p *PlaybackFileStore) saveObjects() error {
 	var buffer bytes.Buffer
 	enc := gob.NewEncoder(&buffer)
 	if err := enc.Encode(p); err != nil {
@@ -127,6 +136,21 @@ func (p *PlaybackFileStore) clipIndex(clip model.MediaClip) (int, error) {
 
 	if idxOut < 0 {
 		return -1, errors.New("Clip not found")
+	}
+	return idxOut, nil
+}
+
+func (p *PlaybackFileStore) playbackStateIndex(playback model.PlaybackState) (int, error) {
+	idxOut := -1
+	for idx, state := range p.PlaybackStatesArr {
+		if playback.PlaybackStateID == state.PlaybackStateID {
+			idxOut = idx
+			break
+		}
+	}
+
+	if idxOut < 0 {
+		return -1, errors.New("PlaybackState not found")
 	}
 	return idxOut, nil
 }

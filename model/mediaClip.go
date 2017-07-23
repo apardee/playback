@@ -3,10 +3,10 @@ package model
 // MediaClip is the object representation of a media file,
 // along with associated metadata.
 type MediaClip struct {
-	ClipID *UUID
-	FileID *UUID
-	Title  string
-	Length int64
+	ClipID *UUID  `json:"clip_id"`
+	FileID *UUID  `json:"file_id"`
+	Title  string `json:"title"`
+	Length int64  `json:"length"`
 }
 
 // NewMediaClip creates a new, unbound media clip that can be associated with a file and the associated metadata

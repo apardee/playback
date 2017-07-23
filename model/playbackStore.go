@@ -12,5 +12,5 @@ type PlaybackStore interface {
 	PlaybackStates() []PlaybackState
 	NewPlaybackState() (*PlaybackState, error)
 	UpdatePlaybackState(state PlaybackState) error
-	DeletePlaybackClip(state PlaybackState) error
+	DeletePlaybackState(state PlaybackState) error
 }
