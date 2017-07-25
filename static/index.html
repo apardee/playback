@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <title>Media Clip Uploader</title>
+        <script>
+        window.onload = function() {
+            var dropArea = document.getElementById("dropArea");
+            dropArea.addEventListener("dragover", function(event) {
+                event.preventDefault();
+            });
+            dropArea.addEventListener("dragenter", function(event) {
+                dropArea.style.backgroundColor = "grey";
+            });
+            dropArea.addEventListener("dragleave", function(event) {
+                dropArea.style.backgroundColor = "red";
+            });
+            dropArea.addEventListener("drop", function(event) {
+                event.stopPropagation();
+                event.preventDefault();
+                dropArea.style.backgroundColor = "red";
+                var files = event.dataTransfer.files;
+                if (files.length == 1) {
+                    var file = files[0];
+                    var fileReader = new FileReader();
+                    fileReader.onload = function(loadComplete) {
+                        var result = loadComplete.target.result;
+                        var resultView = new DataView(result);
+                        var request = new XMLHttpRequest();
+                        request.onreadystatechange = function() { 
+                            if (request.readyState == 4 && request.status == 200) {
+                                alert("ok!")
+                            }
+                        }
+                        request.open("POST", "http://localhost:8080/upload_file", true);
+                        request.send(resultView);
+                    }
+                    fileReader.readAsArrayBuffer(file);
+                }
+                else {
+                    alert("Only one audio file can be handled at once!");
+                }
+            });
+        };
+        </script>
+    </head>
+    <body>
+        <div id="dropArea" style="background-color:red; display:block; margin:auto; width:75%; height:75%;"></div>
+    </body>
+</html
