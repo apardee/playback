@@ -2,12 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
-	"log"
-	"net/http/httputil"
+	"io/ioutil"
 
 	"github.com/apardee/playback/model"
 )
@@ -53,17 +51,22 @@ func RunService(store model.PlaybackStore) error {
 	})
 
 	http.HandleFunc("/upload_file", func(w http.ResponseWriter, r *http.Request) {
-		byt, err := httputil.DumpRequest(r, true)
-		if err == nil {
-			log.Println(string(byt))
-		}
-
+		// byt, err := httputil.DumpRequest(r, true)
+		// if err == nil {
+		// 	log.Println(string(byt))
+		// }
+		// fmt.Println(r.Header.Get("Content-Type"))
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			io.WriteString(w, "405 - Uploaded files must be posted")
 		}
 
-		fmt.Println(r.Header.Get("Content-Type"))
+		byt, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			io.WriteString(w, "500 - Failed to read file")
+		}
+		ioutil.WriteFile("test.mp3", byt, 7777)
 	})
 
 	return http.ListenAndServe(":8080", nil)
