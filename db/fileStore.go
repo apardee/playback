@@ -2,11 +2,13 @@ package db
 
 import (
 	"bytes"
+	"encoding/gob"
+	"errors"
 	"io/ioutil"
 
-	"encoding/gob"
+	"log"
 
-	"errors"
+	"os"
 
 	"github.com/apardee/playback/model"
 )
@@ -19,6 +21,8 @@ type PlaybackFileStore struct {
 
 // Open opens the file store.
 func (p *PlaybackFileStore) Open() error {
+	os.Mkdir("clips", 0777)
+
 	clipBytes, err := ioutil.ReadFile("clips.gob")
 	if err != nil {
 		p.ClipsArr = []model.MediaClip{}
@@ -111,6 +115,35 @@ func (p *PlaybackFileStore) DeletePlaybackState(state model.PlaybackState) error
 	}
 	p.PlaybackStatesArr = append(p.PlaybackStatesArr[:index], p.PlaybackStatesArr[index+1:]...)
 	return p.saveObjects()
+}
+
+// CommitMediaFile commits the data for an uploaded media file, creating the associated MediaClip object and saving the data to the filesystem.
+func (p *PlaybackFileStore) CommitMediaFile(byt []byte) error {
+	// Create the uuid for the media file to be stored
+	uuid, err := model.NewUUID()
+	if err != nil {
+		return err
+	}
+
+	clip, err := p.NewClip()
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile("clips/"+uuid.String(), byt, 0777); err != nil {
+		return err
+	}
+
+	clip.Title = "New title..."
+	clip.Length = 123 // TODO: read this out of either the id3 or the info itself
+	clip.FileID = uuid
+
+	if err := p.UpdateClip(*clip); err != nil {
+		return err
+	}
+
+	log.Println("Clip created:", clip)
+	return err
 }
 
 func (p *PlaybackFileStore) saveObjects() error {

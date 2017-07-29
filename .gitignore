@@ -1,3 +1,5 @@
 .DS_Store
 playback
 *.gob
+*.mp3
+clips/*

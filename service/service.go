@@ -7,6 +7,8 @@ import (
 
 	"io/ioutil"
 
+	"log"
+
 	"github.com/apardee/playback/model"
 )
 
@@ -74,7 +76,13 @@ func (c context) uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "500 - Failed to read file")
 		return
 	}
-	ioutil.WriteFile("test.mp3", byt, 7777)
+
+	if err := c.store.CommitMediaFile(byt); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, "500 - Failed to commit file")
+		log.Println(err)
+		return
+	}
 }
 
 // RunService starts up the http service for serving up Playback objects.

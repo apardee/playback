@@ -13,4 +13,6 @@ type PlaybackStore interface {
 	NewPlaybackState() (*PlaybackState, error)
 	UpdatePlaybackState(state PlaybackState) error
 	DeletePlaybackState(state PlaybackState) error
+
+	CommitMediaFile(byt []byte) error
 }
