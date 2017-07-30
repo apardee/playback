@@ -27,7 +27,7 @@ func main() {
 	// 	if err := fileStore.UpdateClip(*clip); err != nil {
 	// 		log.Fatal(err)
 	// 	}
-	// 	log.Println("Current Clips:", fileStore.Clips())
+	// log.Println("Current Clips:", fileStore.Clips())
 	// }
 
 	// Add a playback state object to the store...
@@ -43,6 +43,8 @@ func main() {
 	// 	}
 	// 	log.Println(fileStore.PlaybackStates())
 	// }
+
+	log.Println("Current Clips:", fileStore.Clips())
 
 	log.Println("Starting web service...")
 	if err := service.RunService(fileStore); err != nil {

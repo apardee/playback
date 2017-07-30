@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-
 	"strings"
 
 	uuid "github.com/nu7hatch/gouuid"

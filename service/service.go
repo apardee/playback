@@ -3,11 +3,9 @@ package service
 import (
 	"encoding/json"
 	"io"
-	"net/http"
-
 	"io/ioutil"
-
 	"log"
+	"net/http"
 
 	"github.com/apardee/playback/model"
 )
@@ -59,11 +57,6 @@ func (c context) playbackStateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c context) uploadFileHandler(w http.ResponseWriter, r *http.Request) {
-	// byt, err := httputil.DumpRequest(r, true)
-	// if err == nil {
-	// 	log.Println(string(byt))
-	// }
-	// fmt.Println(r.Header.Get("Content-Type"))
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		io.WriteString(w, "405 - Uploaded files must be posted")

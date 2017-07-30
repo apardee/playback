@@ -5,13 +5,13 @@ import (
 	"encoding/gob"
 	"errors"
 	"io/ioutil"
-
-	"log"
-
 	"os"
 
+	"github.com/apardee/playback/audio"
 	"github.com/apardee/playback/model"
 )
+
+const localFilename string = "clips/clips.gob"
 
 // PlaybackFileStore uses local file storage implementing PlaybackStore
 type PlaybackFileStore struct {
@@ -23,7 +23,7 @@ type PlaybackFileStore struct {
 func (p *PlaybackFileStore) Open() error {
 	os.Mkdir("clips", 0777)
 
-	clipBytes, err := ioutil.ReadFile("clips.gob")
+	clipBytes, err := ioutil.ReadFile(localFilename)
 	if err != nil {
 		p.ClipsArr = []model.MediaClip{}
 		p.PlaybackStatesArr = []model.PlaybackState{}
@@ -134,15 +134,19 @@ func (p *PlaybackFileStore) CommitMediaFile(byt []byte) error {
 		return err
 	}
 
+	length, err := audio.MP3Length(byt)
+	if err != nil {
+		return err
+	}
+
 	clip.Title = "New title..."
-	clip.Length = 123 // TODO: read this out of either the id3 or the info itself
+	clip.Length = length
 	clip.FileID = uuid
 
 	if err := p.UpdateClip(*clip); err != nil {
 		return err
 	}
 
-	log.Println("Clip created:", clip)
 	return err
 }
 
@@ -152,7 +156,7 @@ func (p *PlaybackFileStore) saveObjects() error {
 	if err := enc.Encode(p); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile("clips.gob", buffer.Bytes(), 0777); err != nil {
+	if err := ioutil.WriteFile(localFilename, buffer.Bytes(), 0777); err != nil {
 		return err
 	}
 	return nil
