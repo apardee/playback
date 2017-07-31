@@ -25,6 +25,5 @@ func MP3Length(byt []byte) (time.Duration, error) {
 		}
 		dur += f.Duration()
 	}
-	// log.Println(dur)
 	return dur, nil
 }

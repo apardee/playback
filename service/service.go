@@ -2,10 +2,12 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/apardee/playback/model"
 )
@@ -17,16 +19,14 @@ type context struct {
 func (c context) clipsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		clips := c.store.Clips()
-		bytes, err := json.Marshal(clips)
+		byt, err := json.Marshal(clips)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(w, "500 - Failed to prepare clips")
+			recordRequestError(w, http.StatusInternalServerError, "Failed to prepare clips")
 			return
 		}
-		io.WriteString(w, string(bytes))
+		w.Write(byt)
 	} else {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		io.WriteString(w, "405 - Method not allowed")
+		recordRequestError(w, http.StatusMethodNotAllowed, "")
 		return
 	}
 }
@@ -40,41 +40,84 @@ func (c context) playbackStatesHandler(w http.ResponseWriter, r *http.Request) {
 		playbacks := c.store.PlaybackStates()
 		bytes, err := json.Marshal(playbacks)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(w, "500 - Failed to prepare clips")
+			recordRequestError(w, http.StatusInternalServerError, "Failed to prepare clips")
 			return
 		}
 		io.WriteString(w, string(bytes))
 	} else {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		io.WriteString(w, "405 - Method not allowed")
+		recordRequestError(w, http.StatusMethodNotAllowed, "")
 		return
 	}
 }
 
 func (c context) playbackStateHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "TODO: Playback state updating")
+	components := strings.Split(r.URL.Path, "/")
+	if len(components) < 2 {
+		recordRequestError(w, http.StatusBadRequest, "Expected a uuid in the URL")
+		return
+	}
+
+	uuid := components[1]
+	if r.Method == http.MethodGet {
+		states := c.store.PlaybackStates()
+		var stateOut *model.PlaybackState
+		for _, state := range states {
+			if state.PlaybackStateID.String() == uuid {
+				stateOut = &state
+				break
+			}
+		}
+
+		if stateOut == nil {
+			recordRequestError(w, http.StatusNotFound, "")
+			return
+		}
+
+		byt, err := json.Marshal(stateOut)
+		if err != nil {
+			recordRequestError(w, http.StatusMethodNotAllowed, "Failed to prepare clips")
+			return
+		}
+
+		w.Write(byt)
+	} else if r.Method == http.MethodPost {
+
+	} else {
+		recordRequestError(w, http.StatusMethodNotAllowed, "")
+		return
+	}
 }
 
 func (c context) uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		io.WriteString(w, "405 - Uploaded files must be posted")
+		recordRequestError(w, http.StatusMethodNotAllowed, "Uploaded files must be posted")
 		return
 	}
 
 	byt, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, "500 - Failed to read file")
+		recordRequestError(w, http.StatusInternalServerError, "Failed to read file")
 		return
 	}
 
 	if err := c.store.CommitMediaFile(byt); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, "500 - Failed to commit file")
-		log.Println(err)
+		recordRequestError(w, http.StatusInternalServerError, "Failed to commit file")
 		return
+	}
+}
+
+func recordRequestError(w http.ResponseWriter, status int, message string) {
+	if message == "" {
+		message = http.StatusText(status)
+	}
+	w.WriteHeader(status)
+	fmt.Fprintf(w, "%d - %s", status, message)
+}
+
+func logger(hnd http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hnd(w, r)
+		log.Printf(r.RemoteAddr + " - " + r.URL.Path)
 	}
 }
 
@@ -83,11 +126,11 @@ func RunService(store model.PlaybackStore) error {
 
 	ctx := context{store: store}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/clips", ctx.clipsHandler)
-	mux.HandleFunc("/clip/", ctx.clipHandler)
-	mux.HandleFunc("/playback_states", ctx.playbackStatesHandler)
-	mux.HandleFunc("/playback_state/", ctx.playbackStateHandler)
-	mux.HandleFunc("/upload_file", ctx.uploadFileHandler)
+	mux.HandleFunc("/clips", logger(ctx.clipsHandler))
+	mux.HandleFunc("/clip/", logger(ctx.clipHandler))
+	mux.HandleFunc("/playback_states", logger(ctx.playbackStatesHandler))
+	mux.HandleFunc("/playback_state/", logger(ctx.playbackStateHandler))
+	mux.HandleFunc("/upload_file", logger(ctx.uploadFileHandler))
 
 	return http.ListenAndServe(":8080", mux)
 }
