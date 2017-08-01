@@ -32,7 +32,57 @@ func (c context) clipsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c context) clipHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "TODO: Clip updating")
+	components := strings.Split(r.URL.Path, "/")
+	if len(components) < 2 {
+		recordRequestError(w, http.StatusBadRequest, "Expected a uuid in the URL")
+		return
+	}
+
+	uuid := components[1]
+	if r.Method == http.MethodGet {
+		// Find the clip object with the UUID matching the one provided in the request URL.
+		clips := c.store.Clips()
+		var clipOut *model.MediaClip
+		for _, clip := range clips {
+			if clip.ClipID.String() == uuid {
+				clipOut = &clip
+				break
+			}
+		}
+
+		if clipOut == nil {
+			recordRequestError(w, http.StatusNotFound, "")
+			return
+		}
+
+		byt, err := json.Marshal(clipOut)
+		if err != nil {
+			recordRequestError(w, http.StatusMethodNotAllowed, "Failed to prepare clips")
+			return
+		}
+		w.Write(byt)
+	} else if r.Method == http.MethodPost {
+		// Read the body of the request as a clip.
+		byt, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			recordRequestError(w, http.StatusInternalServerError, "")
+			return
+		}
+
+		var clip model.MediaClip
+		if err := json.Unmarshal(byt, &clip); err != nil {
+			recordRequestError(w, http.StatusBadRequest, "Failed to read clip object")
+			return
+		}
+
+		if err := c.store.UpdateClip(clip); err != nil {
+			recordRequestError(w, http.StatusBadRequest, "Failed to read clip object")
+			return
+		}
+	} else {
+		recordRequestError(w, http.StatusMethodNotAllowed, "")
+		return
+	}
 }
 
 func (c context) playbackStatesHandler(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +109,7 @@ func (c context) playbackStateHandler(w http.ResponseWriter, r *http.Request) {
 
 	uuid := components[1]
 	if r.Method == http.MethodGet {
+		// Find the playback state object with the UUID matching the one provided in the request URL.
 		states := c.store.PlaybackStates()
 		var stateOut *model.PlaybackState
 		for _, state := range states {
@@ -75,13 +126,28 @@ func (c context) playbackStateHandler(w http.ResponseWriter, r *http.Request) {
 
 		byt, err := json.Marshal(stateOut)
 		if err != nil {
-			recordRequestError(w, http.StatusMethodNotAllowed, "Failed to prepare clips")
+			recordRequestError(w, http.StatusMethodNotAllowed, "Failed to prepare playback state")
+			return
+		}
+		w.Write(byt)
+	} else if r.Method == http.MethodPost {
+		// Read the body of the request as a clip.
+		byt, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			recordRequestError(w, http.StatusInternalServerError, "")
 			return
 		}
 
-		w.Write(byt)
-	} else if r.Method == http.MethodPost {
+		var state model.PlaybackState
+		if err := json.Unmarshal(byt, &state); err != nil {
+			recordRequestError(w, http.StatusBadRequest, "Failed to read playback state object")
+			return
+		}
 
+		if err := c.store.UpdatePlaybackState(state); err != nil {
+			recordRequestError(w, http.StatusBadRequest, "Failed to read playback state object")
+			return
+		}
 	} else {
 		recordRequestError(w, http.StatusMethodNotAllowed, "")
 		return
