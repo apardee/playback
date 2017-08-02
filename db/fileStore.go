@@ -165,7 +165,7 @@ func (p *PlaybackFileStore) saveObjects() error {
 func (p *PlaybackFileStore) clipIndex(clip model.MediaClip) (int, error) {
 	idxOut := -1
 	for idx, clp := range p.ClipsArr {
-		if clp.ClipID == clip.ClipID {
+		if clp.ClipID.String() == clip.ClipID.String() {
 			idxOut = idx
 			break
 		}
@@ -180,7 +180,7 @@ func (p *PlaybackFileStore) clipIndex(clip model.MediaClip) (int, error) {
 func (p *PlaybackFileStore) playbackStateIndex(playback model.PlaybackState) (int, error) {
 	idxOut := -1
 	for idx, state := range p.PlaybackStatesArr {
-		if playback.PlaybackStateID == state.PlaybackStateID {
+		if playback.PlaybackStateID.String() == state.PlaybackStateID.String() {
 			idxOut = idx
 			break
 		}

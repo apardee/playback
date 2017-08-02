@@ -33,12 +33,12 @@ func (c context) clipsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c context) clipHandler(w http.ResponseWriter, r *http.Request) {
 	components := strings.Split(r.URL.Path, "/")
-	if len(components) < 2 {
+	if len(components) < 3 {
 		recordRequestError(w, http.StatusBadRequest, "Expected a uuid in the URL")
 		return
 	}
 
-	uuid := components[1]
+	uuid := components[2]
 	if r.Method == http.MethodGet {
 		// Find the clip object with the UUID matching the one provided in the request URL.
 		clips := c.store.Clips()
@@ -71,12 +71,12 @@ func (c context) clipHandler(w http.ResponseWriter, r *http.Request) {
 
 		var clip model.MediaClip
 		if err := json.Unmarshal(byt, &clip); err != nil {
-			recordRequestError(w, http.StatusBadRequest, "Failed to read clip object")
+			recordRequestError(w, http.StatusInternalServerError, "Failed to decode clip object")
 			return
 		}
 
 		if err := c.store.UpdateClip(clip); err != nil {
-			recordRequestError(w, http.StatusBadRequest, "Failed to read clip object")
+			recordRequestError(w, http.StatusInternalServerError, "Failed to commit clip object")
 			return
 		}
 	} else {
@@ -102,12 +102,12 @@ func (c context) playbackStatesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c context) playbackStateHandler(w http.ResponseWriter, r *http.Request) {
 	components := strings.Split(r.URL.Path, "/")
-	if len(components) < 2 {
+	if len(components) < 3 {
 		recordRequestError(w, http.StatusBadRequest, "Expected a uuid in the URL")
 		return
 	}
 
-	uuid := components[1]
+	uuid := components[2]
 	if r.Method == http.MethodGet {
 		// Find the playback state object with the UUID matching the one provided in the request URL.
 		states := c.store.PlaybackStates()
