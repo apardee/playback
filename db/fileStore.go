@@ -11,19 +11,27 @@ import (
 	"github.com/apardee/playback/model"
 )
 
-const localFilename string = "clips/clips.gob"
+const localFilename string = "clips.gob"
+
+// PlaybackFileStoreConfig defines the configuration
+type PlaybackFileStoreConfig struct {
+	DataPath string
+}
 
 // PlaybackFileStore uses local file storage implementing PlaybackStore
 type PlaybackFileStore struct {
 	ClipsArr          []model.MediaClip
 	PlaybackStatesArr []model.PlaybackState
+	Config            PlaybackFileStoreConfig
 }
 
 // Open opens the file store.
-func (p *PlaybackFileStore) Open() error {
-	os.Mkdir("clips", 0777)
+func (p *PlaybackFileStore) Open(config interface{}) error {
+	p.Config = config.(PlaybackFileStoreConfig)
 
-	clipBytes, err := ioutil.ReadFile(localFilename)
+	os.Mkdir(p.Config.DataPath, 0777)
+
+	clipBytes, err := ioutil.ReadFile(p.Config.DataPath + "/" + localFilename)
 	if err != nil {
 		p.ClipsArr = []model.MediaClip{}
 		p.PlaybackStatesArr = []model.PlaybackState{}
@@ -156,7 +164,7 @@ func (p *PlaybackFileStore) saveObjects() error {
 	if err := enc.Encode(p); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(localFilename, buffer.Bytes(), 0777); err != nil {
+	if err := ioutil.WriteFile(p.Config.DataPath+"/"+localFilename, buffer.Bytes(), 0777); err != nil {
 		return err
 	}
 	return nil

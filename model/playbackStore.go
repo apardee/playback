@@ -2,7 +2,7 @@ package model
 
 // PlaybackStore defines the persistent interface for model objects.
 type PlaybackStore interface {
-	Open() error
+	Open(config interface{}) error
 
 	Clips() []MediaClip
 	NewClip() (*MediaClip, error)

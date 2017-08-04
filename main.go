@@ -11,7 +11,7 @@ import (
 func main() {
 	var fileStore model.PlaybackStore
 	fileStore = &db.PlaybackFileStore{}
-	if err := fileStore.Open(); err != nil {
+	if err := fileStore.Open(db.PlaybackFileStoreConfig{DataPath: "clips"}); err != nil {
 		log.Fatal(err)
 	}
 
