@@ -32,6 +32,7 @@ func (p *PlaybackFileStore) Open(config interface{}) error {
 	os.Mkdir(p.Config.DataPath, 0777)
 
 	clipBytes, err := ioutil.ReadFile(p.Config.DataPath + "/" + localFilename)
+
 	if err != nil {
 		p.ClipsArr = []model.MediaClip{}
 		p.PlaybackStatesArr = []model.PlaybackState{}
@@ -138,7 +139,7 @@ func (p *PlaybackFileStore) CommitMediaFile(byt []byte) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile("clips/"+uuid.String(), byt, 0777); err != nil {
+	if err := ioutil.WriteFile(p.Config.DataPath+"/"+uuid.String(), byt, 0777); err != nil {
 		return err
 	}
 
@@ -173,7 +174,7 @@ func (p *PlaybackFileStore) saveObjects() error {
 func (p *PlaybackFileStore) clipIndex(clip model.MediaClip) (int, error) {
 	idxOut := -1
 	for idx, clp := range p.ClipsArr {
-		if clp.ClipID.String() == clip.ClipID.String() {
+		if clp.ClipID != nil && clip.ClipID != nil && clp.ClipID.String() == clip.ClipID.String() {
 			idxOut = idx
 			break
 		}
@@ -188,7 +189,7 @@ func (p *PlaybackFileStore) clipIndex(clip model.MediaClip) (int, error) {
 func (p *PlaybackFileStore) playbackStateIndex(playback model.PlaybackState) (int, error) {
 	idxOut := -1
 	for idx, state := range p.PlaybackStatesArr {
-		if playback.PlaybackStateID.String() == state.PlaybackStateID.String() {
+		if playback.PlaybackStateID != nil && state.PlaybackStateID != nil && playback.PlaybackStateID.String() == state.PlaybackStateID.String() {
 			idxOut = idx
 			break
 		}
