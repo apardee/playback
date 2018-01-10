@@ -34,7 +34,6 @@ func (u *UUID) MarshalJSON() ([]byte, error) {
 func (u *UUID) UnmarshalJSON(byt []byte) error {
 	str := string(byt)
 	str = strings.Trim(str, "\"")
-	fmt.Println("candidate:", str)
 	uuid, err := uuid.ParseHex(str)
 	if err != nil {
 		return err
